@@ -78,24 +78,45 @@
 
         <!-- Stok Menipis List -->
         <div class="bg-white p-6 rounded-2xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-slate-100 flex flex-col">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-sm font-bold text-slate-800">Stok Menipis</h3>
-                <span class="bg-amber-100 text-amber-700 text-xs font-bold px-2 py-1 rounded-md">{{ $stokMenipisCount }} item</span>
+            <div class="flex justify-between items-center mb-5">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center shrink-0">
+                        <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-slate-800">Stok Menipis</h3>
+                </div>
+                <span class="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">{{ $stokMenipisCount }} Produk</span>
             </div>
             
-            <div class="flex-1 overflow-y-auto space-y-4 pr-2">
+            <div class="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
                 @forelse($stokMenipisList as $produk)
-                <div class="flex justify-between items-center pb-4 border-b border-slate-50 last:border-0 last:pb-0">
-                    <div>
-                        <p class="text-sm font-semibold text-slate-800">{{ $produk->nama }}</p>
-                        <p class="text-xs text-slate-500">{{ $produk->kode }}</p>
+                <div class="flex justify-between items-center p-3 bg-slate-50 hover:bg-white hover:shadow-md hover:border-amber-200 transition-all duration-300 border border-slate-100 rounded-xl group">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden shadow-sm group-hover:scale-105 transition-transform">
+                            @if($produk->foto)
+                                <img src="{{ asset('storage/'.$produk->foto) }}" class="w-full h-full object-cover">
+                            @else
+                                <i data-lucide="package" class="w-5 h-5 text-slate-300"></i>
+                            @endif
+                        </div>
+                        <div class="min-w-0 pr-2">
+                            <p class="text-sm font-bold text-slate-800 truncate">{{ $produk->nama }}</p>
+                            <p class="text-[11px] font-semibold text-slate-400 tracking-wide mt-0.5">{{ $produk->kode }}</p>
+                        </div>
                     </div>
-                    <span class="bg-amber-50 text-amber-600 border border-amber-200 text-xs font-bold px-2 py-1 rounded-md">{{ $produk->stok }} sisa</span>
+                    <div class="flex shrink-0">
+                        <span class="bg-red-50 text-red-600 border border-red-100 text-xs font-bold px-2.5 py-1 rounded-lg shadow-sm">
+                            Sisa {{ $produk->stok }}
+                        </span>
+                    </div>
                 </div>
                 @empty
-                <div class="flex flex-col items-center justify-center h-full text-slate-400">
-                    <i data-lucide="check-circle" class="w-8 h-8 mb-2 opacity-50"></i>
-                    <p class="text-sm">Stok aman</p>
+                <div class="flex flex-col items-center justify-center h-full text-slate-400 py-8">
+                    <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-3">
+                        <i data-lucide="check-circle" class="w-8 h-8 text-emerald-400"></i>
+                    </div>
+                    <p class="text-sm font-bold text-slate-600">Stok Terkendali</p>
+                    <p class="text-xs text-slate-400 mt-1">Belum ada produk yang menipis</p>
                 </div>
                 @endforelse
             </div>
@@ -146,6 +167,7 @@
     </div>
 </div>
 
+</script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const ctx = document.getElementById('dashboardChart').getContext('2d');

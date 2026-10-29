@@ -18,10 +18,12 @@ class AkunController extends Controller
         $request->validate([
             'nama' => 'required',
             'username' => 'required|unique:users',
-            'email' => 'required|email|unique:users',
+            'email' => 'required|email|ends_with:@gmail.com|unique:users',
             'password' => 'required|min:6',
             'role' => 'required|in:admin,kasir',
             'status' => 'required|in:aktif,nonaktif'
+        ], [
+            'email.ends_with' => 'Email harus menggunakan domain @gmail.com.'
         ]);
 
         User::create([
@@ -43,7 +45,7 @@ class AkunController extends Controller
         $rules = [
             'nama' => 'required',
             'username' => 'required|unique:users,username,'.$id,
-            'email' => 'required|email|unique:users,email,'.$id,
+            'email' => 'required|email|ends_with:@gmail.com|unique:users,email,'.$id,
             'role' => 'required|in:admin,kasir',
             'status' => 'required|in:aktif,nonaktif'
         ];
@@ -52,7 +54,9 @@ class AkunController extends Controller
             $rules['password'] = 'min:6';
         }
 
-        $request->validate($rules);
+        $request->validate($rules, [
+            'email.ends_with' => 'Email harus menggunakan domain @gmail.com.'
+        ]);
 
         $akun->name = $request->nama;
         $akun->username = $request->username;

@@ -33,6 +33,12 @@ class AuthController extends Controller
             
             $request->session()->regenerate();
 
+            // Cek stok menipis
+            $lowStockCount = \App\Models\Produk::whereColumn('stok', '<=', 'min_stok')->count();
+            if ($lowStockCount > 0) {
+                session()->flash('low_stock_count', $lowStockCount);
+            }
+
             if (Auth::user()->role === 'kasir') {
                 return redirect()->route('pos');
             }

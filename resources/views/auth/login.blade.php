@@ -11,28 +11,45 @@
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
+    <!-- Pulsing Racket Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 hidden flex-col items-center justify-center transition-all duration-300">
+        <div class="animate-pulse flex flex-col items-center">
+            <div class="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(37,99,235,0.6)] mb-6">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-white w-14 h-14 transform rotate-45">
+                    <rect x="8" y="2" width="8" height="12" rx="4" />
+                    <line x1="12" y1="14" x2="12" y2="18" stroke-width="1.5" />
+                    <line x1="12" y1="18" x2="12" y2="23" stroke-width="3" />
+                    <line x1="8" y1="6" x2="16" y2="6" stroke-width="1" opacity="0.5" />
+                    <line x1="8" y1="10" x2="16" y2="10" stroke-width="1" opacity="0.5" />
+                    <line x1="10" y1="2" x2="10" y2="14" stroke-width="1" opacity="0.5" />
+                    <line x1="14" y1="2" x2="14" y2="14" stroke-width="1" opacity="0.5" />
+                </svg>
+            </div>
+            <h3 class="text-white text-xl font-bold tracking-widest uppercase shadow-black drop-shadow-md">Memproses...</h3>
+        </div>
+    </div>
     <div class="bg-white w-full max-w-4xl rounded-2xl shadow-xl flex flex-col md:flex-row overflow-hidden min-h-[500px]">
         <!-- Left Panel -->
         <div class="w-full md:w-1/2 bg-blue-600 p-10 text-white flex flex-col justify-between">
             <div>
-                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-6">
-                    <i data-lucide="shopping-cart" class="text-white w-6 h-6"></i>
+                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-6 shadow-sm">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-white w-7 h-7 transform rotate-45">
+                        <rect x="8" y="2" width="8" height="12" rx="4" />
+                        <line x1="12" y1="14" x2="12" y2="18" stroke-width="1.5" />
+                        <line x1="12" y1="18" x2="12" y2="23" stroke-width="3" />
+                        <line x1="8" y1="6" x2="16" y2="6" stroke-width="1" opacity="0.5" />
+                        <line x1="8" y1="10" x2="16" y2="10" stroke-width="1" opacity="0.5" />
+                        <line x1="10" y1="2" x2="10" y2="14" stroke-width="1" opacity="0.5" />
+                        <line x1="14" y1="2" x2="14" y2="14" stroke-width="1" opacity="0.5" />
+                    </svg>
                 </div>
                 <h1 class="text-3xl font-bold mb-4">Raket Murah Jogja</h1>
                 <p class="text-blue-100 leading-relaxed">
                     Sistem kasir terpadu untuk toko peralatan badminton — raket, sepatu, tas, kok, dan aksesori.
                 </p>
             </div>
-            
-            <div class="mt-12 space-y-3">
-                <div class="flex gap-4 text-sm bg-blue-700/50 p-3 rounded-lg">
-                    <span class="font-semibold w-16">Admin</span>
-                    <span>admin / admin123</span>
-                </div>
-                <div class="flex gap-4 text-sm bg-blue-700/50 p-3 rounded-lg">
-                    <span class="font-semibold w-16">Kasir</span>
-                    <span>budi / kasir123</span>
-                </div>
+            <div class="mt-12 text-blue-200 text-xs">
+                &copy; 2024 Raket Murah Jogja Store. All rights reserved.
             </div>
         </div>
 
@@ -47,7 +64,7 @@
                 </div>
                 @endif
 
-                <form action="{{ route('login.post') }}" method="POST" class="space-y-5">
+                <form action="{{ route('login.post') }}" method="POST" class="space-y-5" id="loginForm">
                     @csrf
                     <div>
                         <label class="block text-xs font-semibold text-slate-500 uppercase mb-2">Username</label>
@@ -74,6 +91,14 @@
             </div>
         </div>
     </div>
-    <script>lucide.createIcons();</script>
+    <script>
+        lucide.createIcons();
+        
+        document.getElementById('loginForm').addEventListener('submit', function() {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+        });
+    </script>
 </body>
 </html>
