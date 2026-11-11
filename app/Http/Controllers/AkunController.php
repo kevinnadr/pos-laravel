@@ -9,7 +9,9 @@ class AkunController extends Controller
 {
     public function index()
     {
-        $akuns = User::orderBy('created_at', 'desc')->get();
+        $akuns = User::orderByRaw("CASE role WHEN 'admin' THEN 0 WHEN 'gudang' THEN 1 ELSE 2 END")
+            ->orderBy('created_at', 'desc')
+            ->get();
         return view('pos.akun', compact('akuns'));
     }
 
@@ -20,7 +22,7 @@ class AkunController extends Controller
             'username' => 'required|unique:users',
             'email' => 'required|email|ends_with:@gmail.com|unique:users',
             'password' => 'required|min:6',
-            'role' => 'required|in:admin,kasir',
+            'role' => 'required|in:admin,kasir,gudang',
             'status' => 'required|in:aktif,nonaktif'
         ], [
             'email.ends_with' => 'Email harus menggunakan domain @gmail.com.'
@@ -46,7 +48,7 @@ class AkunController extends Controller
             'nama' => 'required',
             'username' => 'required|unique:users,username,'.$id,
             'email' => 'required|email|ends_with:@gmail.com|unique:users,email,'.$id,
-            'role' => 'required|in:admin,kasir',
+            'role' => 'required|in:admin,kasir,gudang',
             'status' => 'required|in:aktif,nonaktif'
         ];
 

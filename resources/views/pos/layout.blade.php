@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Raket Murah Jogja - POS</title>
+    @if(isset($pengaturan) && $pengaturan->logo)
+    <link rel="icon" href="{{ asset('storage/' . $pengaturan->logo) }}">
+    @endif
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -82,10 +85,6 @@
                 <i data-lucide="layout-dashboard" class="w-5 h-5 shrink-0"></i> 
                 <span class="sidebar-text truncate">Dashboard</span>
             </a>
-            <a href="{{ route('kategori') }}" class="flex items-center gap-4 px-6 py-3.5 text-sm transition-all duration-200 {{ request()->routeIs('kategori') ? 'sidebar-active' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}" title="Kategori">
-                <i data-lucide="tag" class="w-5 h-5 shrink-0"></i> 
-                <span class="sidebar-text truncate">Kategori</span>
-            </a>
             @endif
             <a href="{{ route('produk') }}" class="flex items-center gap-4 px-6 py-3.5 text-sm transition-all duration-200 {{ request()->routeIs('produk') ? 'sidebar-active' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}" title="Manajemen Produk">
                 <i data-lucide="package" class="w-5 h-5 shrink-0"></i> 
@@ -100,21 +99,18 @@
                 <i data-lucide="users" class="w-5 h-5 shrink-0"></i> 
                 <span class="sidebar-text truncate">Manajemen Akun</span>
             </a>
-            @endif
+            <a href="{{ route('setting') }}" class="flex items-center gap-4 px-6 py-3.5 text-sm transition-all duration-200 {{ request()->routeIs('setting') ? 'sidebar-active' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}" title="Pengaturan">
+                <i data-lucide="settings" class="w-5 h-5 shrink-0"></i> 
+                <span class="sidebar-text truncate">Pengaturan</span>
+            </a>
+            @elseif(Auth::user()->role === 'kasir')
             <a href="{{ route('pos') }}" class="flex items-center gap-4 px-6 py-3.5 text-sm transition-all duration-200 {{ request()->routeIs('pos') ? 'sidebar-active' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}" title="Point of Sale">
                 <i data-lucide="shopping-cart" class="w-5 h-5 shrink-0"></i> 
                 <span class="sidebar-text truncate">Point of Sale</span>
             </a>
-            @if(Auth::user()->role === 'kasir')
             <a href="{{ route('riwayat') }}" class="flex items-center gap-4 px-6 py-3.5 text-sm transition-all duration-200 {{ request()->routeIs('riwayat') ? 'sidebar-active' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}" title="Riwayat Transaksi">
                 <i data-lucide="history" class="w-5 h-5 shrink-0"></i> 
                 <span class="sidebar-text truncate">Riwayat Transaksi</span>
-            </a>
-            @endif
-            @if(Auth::user()->role === 'admin')
-            <a href="{{ route('setting') }}" class="flex items-center gap-4 px-6 py-3.5 text-sm transition-all duration-200 {{ request()->routeIs('setting') ? 'sidebar-active' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}" title="Pengaturan">
-                <i data-lucide="settings" class="w-5 h-5 shrink-0"></i> 
-                <span class="sidebar-text truncate">Pengaturan</span>
             </a>
             @endif
         </nav>

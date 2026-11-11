@@ -11,27 +11,26 @@
         <div>
             <h1 class="text-2xl font-bold text-slate-800">Laporan Penjualan</h1>
             <p class="text-slate-500 text-sm mt-1">
-                Total Rp{{ number_format($totalPenjualan, 0, ',', '.') }} dari {{ count($transaksis) }} transaksi
+                Berisi data penjualan dan keuangan toko. Gunakan filter untuk menyesuaikan periode laporan.
             </p>
         </div>
         <div class="flex flex-wrap items-center gap-3">
-            <!-- Filter 1 Kotak -->
-            <form id="filterForm" action="{{ route('laporan') }}" method="GET" class="inline-block">
-                <div class="relative">
-                    <select name="filter" onchange="document.getElementById('filterForm').submit()" class="appearance-none bg-white border border-slate-200 text-slate-700 py-2 pl-4 pr-10 rounded-lg text-sm font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm">
-                        <option value="hari" {{ $filter == 'hari' ? 'selected' : '' }}>Hari Ini</option>
-                        <option value="minggu" {{ $filter == 'minggu' ? 'selected' : '' }}>Minggu Ini</option>
-                        <option value="bulan" {{ $filter == 'bulan' ? 'selected' : '' }}>Bulan Ini</option>
-                        <option value="semua" {{ $filter == 'semua' ? 'selected' : '' }}>Semua Waktu</option>
-                    </select>
-                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
-                </div>
+            <form id="filterForm" action="{{ route('laporan') }}" method="GET" class="flex flex-wrap items-center gap-2">
+                <input type="hidden" name="per_page" value="{{ $perPage }}">
+                <select name="filter" x-model="filterMode" class="bg-white border border-slate-200 text-slate-700 px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-blue-500">
+                    @foreach ($filterOptions as $value => $label)
+                        <option value="{{ $value }}">{{ $label }}</option>
+                    @endforeach
+                </select>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                    Terapkan
+                </button>
             </form>
 
-            <a href="{{ route('laporan.export.penjualan', ['filter' => $filter]) }}" class="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition shadow-sm">
+            <a href="{{ route('laporan.export.penjualan', $exportFilters) }}" class="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition shadow-sm">
                 <i data-lucide="file-text" class="w-4 h-4"></i> Export Penjualan
             </a>
-            <a href="{{ route('laporan.export.keuangan', ['filter' => $filter]) }}" class="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition shadow-sm">
+            <a href="{{ route('laporan.export.keuangan', $exportFilters) }}" class="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition shadow-sm">
                 <i data-lucide="download" class="w-4 h-4"></i> Export Keuangan
             </a>
         </div>
@@ -42,7 +41,7 @@
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
             <p class="text-slate-500 text-xs font-semibold mb-2">Total Penjualan</p>
             <p class="text-2xl font-bold text-slate-800">Rp{{ number_format($totalPenjualan, 0, ',', '.') }}</p>
-            <p class="text-xs text-slate-400 mt-1">{{ count($transaksis) }} transaksi</p>
+            <p class="text-xs text-slate-400 mt-1">{{ $jumlahTransaksi }} transaksi</p>
         </div>
         
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
@@ -74,12 +73,59 @@
 
     <!-- Filter & Table -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="p-4 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="relative w-full md:w-80">
-                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                <input type="text" x-model="search" placeholder="Cari ID transaksi / kasir..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500">
+        <form action="{{ route('laporan') }}" method="GET" class="p-4 border-b border-slate-100 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <input type="hidden" name="filter" value="{{ $filter }}">
+            <div class="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
+                <div class="relative w-full sm:w-72">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="search" name="search" x-model="search" value="{{ $search }}" placeholder="Cari ID transaksi / kasir..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500">
+                </div>
+                <select name="tanggal_mode" x-model="dateMode" aria-label="Filter tanggal riwayat penjualan"
+                    class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none">
+                    <option value="">Semua tanggal</option>
+                    <option value="tanggal">Tanggal tertentu</option>
+                    <option value="rentang">Rentang tanggal</option>
+                </select>
             </div>
-        </div>
+            <div class="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
+                <input type="date" name="tanggal" value="{{ $tanggal }}"
+                    x-show="dateMode === 'tanggal'" :disabled="dateMode !== 'tanggal'" :required="dateMode === 'tanggal'"
+                    aria-label="Pilih tanggal riwayat penjualan"
+                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none sm:w-auto">
+                <div x-show="dateMode === 'rentang'" class="flex w-full flex-col gap-2 sm:flex-row sm:w-auto">
+                    <input type="date" name="tanggal_mulai" value="{{ $tanggalMulai }}"
+                        :disabled="dateMode !== 'rentang'" :required="dateMode === 'rentang'"
+                        aria-label="Tanggal mulai riwayat penjualan"
+                        class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none sm:w-auto">
+                    <input type="date" name="tanggal_selesai" value="{{ $tanggalSelesai }}"
+                        :disabled="dateMode !== 'rentang'" :required="dateMode === 'rentang'"
+                        aria-label="Tanggal selesai riwayat penjualan"
+                        class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none sm:w-auto">
+                </div>
+                <label class="flex items-center gap-2 text-sm text-slate-600">
+                    Per halaman
+                    <select name="per_page" aria-label="Jumlah transaksi per halaman" onchange="this.form.submit()"
+                        class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none">
+                        @foreach ([10, 20, 50, 100] as $option)
+                            <option value="{{ $option }}" @selected($perPage === $option)>{{ $option }}</option>
+                        @endforeach
+                    </select>
+                </label>
+                <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700">Terapkan</button>
+                @if ($tanggalMode || $search)
+                    <a href="{{ route('laporan', ['filter' => $filter, 'per_page' => $perPage]) }}" class="rounded-lg border border-slate-200 px-4 py-2 text-center text-sm font-medium text-slate-600 hover:bg-slate-50">Reset</a>
+                @endif
+            </div>
+            @error('tanggal')
+                <p class="text-sm text-red-600">{{ $message }}</p>
+            @enderror
+            @error('tanggal_mulai')
+                <p class="text-sm text-red-600">{{ $message }}</p>
+            @enderror
+            @error('tanggal_selesai')
+                <p class="text-sm text-red-600">{{ $message }}</p>
+            @enderror
+        </form>
         
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
@@ -126,10 +172,18 @@
                 </tbody>
             </table>
         </div>
+        @if ($transaksis->hasPages())
+            <div class="flex flex-col gap-3 border-t border-slate-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <p class="text-sm text-slate-500">
+                    Menampilkan {{ $transaksis->firstItem() }}–{{ $transaksis->lastItem() }} dari {{ $transaksis->total() }} transaksi
+                </p>
+                {{ $transaksis->links() }}
+            </div>
+        @endif
     </div>
 
     <!-- Modal Transaksi Berhasil (Struk) -->
-    <div x-show="showReceiptModal" class="fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" style="display: none;" x-transition>
+    <div id="receiptModal" x-show="showReceiptModal" class="fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" style="display: none;" x-transition>
         <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden relative">
             <button @click="closeReceipt()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 transition z-10 bg-white/80 rounded-full p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
             
@@ -149,6 +203,9 @@
                     @endif
                     <h3 class="font-black text-slate-800 tracking-widest uppercase text-base">{{ isset($pengaturan) ? $pengaturan->nama_toko : 'RAKET MURAH JOGJA' }}</h3>
                     <p class="text-xs text-slate-500 mt-1">{{ isset($pengaturan) ? $pengaturan->alamat_toko : 'Jl. Olahraga No. 88, Bandung' }}</p>
+                    @if(isset($pengaturan) && $pengaturan->email_toko)
+                    <p class="text-xs text-slate-500">{{ $pengaturan->email_toko }}</p>
+                    @endif
                     <p class="text-xs text-slate-500">{{ isset($pengaturan) ? $pengaturan->no_telp : '081234567890' }}</p>
                     <div class="w-full border-t border-dashed border-slate-300 mt-4"></div>
                 </div>
@@ -248,21 +305,76 @@
 
 /* Print Styles */
 @media print {
-    body * {
-        visibility: hidden;
-    }
-    #receiptArea, #receiptArea * {
-        visibility: visible;
-    }
-    #receiptArea {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 80mm; /* Thermal printer width approx */
+    @page {
         margin: 0;
-        padding: 10px;
-        background: white;
-        border: none;
+    }
+
+    body * {
+        visibility: hidden !important;
+    }
+
+    html, body {
+        display: block !important;
+        width: auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        position: static !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    #receiptModal {
+        display: block !important;
+        position: static !important;
+        width: auto !important;
+        height: auto !important;
+        overflow: visible !important;
+        padding: 0 !important;
+        background: transparent !important;
+        backdrop-filter: none !important;
+        transform: none !important;
+        visibility: visible !important;
+    }
+
+    #receiptModal > div {
+        display: block !important;
+        position: static !important;
+        width: auto !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        transform: none !important;
+        margin: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+    }
+
+    #receiptModal > div > :not(#receiptArea) {
+        display: none !important;
+    }
+
+    #receiptArea, #receiptArea * {
+        visibility: visible !important;
+    }
+
+    #receiptArea {
+        display: block !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 80mm !important;
+        box-sizing: border-box !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        margin: 0 !important;
+        padding: 4mm !important;
+        background: white !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
     }
 }
 </style>
@@ -270,8 +382,10 @@
 <script>
     function laporanApp() {
         return {
-            search: '',
-            transaksis: @json($transaksis),
+            search: @js($search),
+            filterMode: @js($filter),
+            dateMode: @js($tanggalMode),
+            transaksis: @json($transaksiHalaman),
             showReceiptModal: false,
             selectedTrx: null,
             

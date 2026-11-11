@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Raket Murah Jogja</title>
+    @if(isset($pengaturan) && $pengaturan->logo)
+    <link rel="icon" href="{{ asset('storage/' . $pengaturan->logo) }}">
+    @endif
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -48,8 +51,16 @@
                     Sistem kasir terpadu untuk toko peralatan badminton — raket, sepatu, tas, kok, dan aksesori.
                 </p>
             </div>
-            <div class="mt-12 text-blue-200 text-xs">
-                &copy; 2024 Raket Murah Jogja Store. All rights reserved.
+            
+            <div class="mt-12 space-y-3">
+                <div class="flex gap-4 text-sm bg-blue-600 p-10/50 p-3 rounded-lg">
+                    <span class="font-semibold w-16"></span>
+                    <span></span>
+                </div>
+                <div class="flex gap-4 text-sm bg-blue-600 p-10/50 p-3 rounded-lg">
+                    <span class="font-semibold w-16"></span>
+                    <span></span>
+                </div>
             </div>
         </div>
 
@@ -82,11 +93,11 @@
                 </form>
 
                 <div class="mt-6 text-center">
-                    <a href="#" class="text-sm text-blue-600 hover:underline">Lupa Password?</a>
+                    <a href="{{ route('password.request') }}" class="text-sm text-blue-600 hover:underline">Lupa Password?</a>
                 </div>
 
                 <div class="mt-12 text-center text-xs text-slate-400">
-                    &copy; 2024 Raket Murah Jogja Store. All rights reserved.
+                    {{ $pengaturan->footer_login ?? '' }}
                 </div>
             </div>
         </div>

@@ -10,11 +10,63 @@
     </div>
 
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="p-4 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="relative w-full md:w-80">
-                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                <input type="text" x-model="search" placeholder="Cari ID transaksi / kasir..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500">
+        <div class="p-4 border-b border-slate-100">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
+                <div class="relative w-full lg:max-w-xs">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" x-model="search" placeholder="Cari ID transaksi / kasir..." aria-label="Cari ID transaksi atau kasir"
+                        class="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                </div>
+
+                <form action="{{ route('riwayat') }}" method="GET" class="flex flex-1 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center lg:justify-end">
+                    <label for="mode_tanggal" class="sr-only">Mode filter tanggal</label>
+                    <select id="mode_tanggal" name="mode_tanggal" x-model="dateMode"
+                        class="w-full sm:w-auto rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100">
+                        <option value="tanggal">Tanggal tertentu</option>
+                        <option value="rentang">Rentang tanggal</option>
+                    </select>
+
+                    <div class="w-full sm:w-auto" x-show="dateMode === 'tanggal'">
+                        <label for="tanggal" class="sr-only">Pilih tanggal</label>
+                        <input id="tanggal" type="date" name="tanggal" value="{{ $tanggal }}"
+                            :disabled="dateMode !== 'tanggal'" :required="dateMode === 'tanggal'"
+                            class="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100">
+                    </div>
+                    <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row" x-show="dateMode === 'rentang'">
+                        <div>
+                            <label for="tanggal_mulai" class="sr-only">Dari tanggal</label>
+                            <input id="tanggal_mulai" type="date" name="tanggal_mulai" value="{{ $tanggalMulai }}"
+                                :disabled="dateMode !== 'rentang'"
+                                class="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100">
+                        </div>
+                        <div>
+                            <label for="tanggal_selesai" class="sr-only">Sampai tanggal</label>
+                            <input id="tanggal_selesai" type="date" name="tanggal_selesai" value="{{ $tanggalSelesai }}"
+                                :disabled="dateMode !== 'rentang'"
+                                class="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-200">
+                        <i data-lucide="filter" class="h-4 w-4"></i>
+                        Cari
+                    </button>
+                    @if ($tanggal || $tanggalMulai || $tanggalSelesai || $modeTanggal !== 'rentang')
+                        <a href="{{ route('riwayat') }}" class="inline-flex items-center justify-center rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
+                            Reset
+                        </a>
+                    @endif
+                </form>
             </div>
+            @error('tanggal')
+                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+            @enderror
+            @error('tanggal_mulai')
+                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+            @enderror
+            @error('tanggal_selesai')
+                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+            @enderror
         </div>
         
         <div class="overflow-x-auto">
@@ -65,7 +117,7 @@
     </div>
 
     <!-- Modal Transaksi Berhasil (Struk) -->
-    <div x-show="showReceiptModal" class="fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" style="display: none;" x-transition>
+    <div id="receiptModal" x-show="showReceiptModal" class="fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" style="display: none;" x-transition>
         <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden relative">
             <button @click="closeReceipt()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 transition z-10 bg-white/80 rounded-full p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
             
@@ -85,6 +137,9 @@
                     @endif
                     <h3 class="font-black text-slate-800 tracking-widest uppercase text-base">{{ isset($pengaturan) ? $pengaturan->nama_toko : 'RAKET MURAH JOGJA' }}</h3>
                     <p class="text-xs text-slate-500 mt-1">{{ isset($pengaturan) ? $pengaturan->alamat_toko : 'Jl. Olahraga No. 88, Bandung' }}</p>
+                    @if(isset($pengaturan) && $pengaturan->email_toko)
+                    <p class="text-xs text-slate-500">{{ $pengaturan->email_toko }}</p>
+                    @endif
                     <p class="text-xs text-slate-500">{{ isset($pengaturan) ? $pengaturan->no_telp : '081234567890' }}</p>
                     <div class="w-full border-t border-dashed border-slate-300 mt-4"></div>
                 </div>
@@ -141,7 +196,7 @@
                             </div>
                             <div class="flex justify-between text-slate-500 mt-1">
                                 <span>Kembali</span>
-                                <span x-text="formatRupiah(selectedTrx.kembalian)"></span>
+                                <span x-text="formatRupiah(getKembalian(selectedTrx))"></span>
                             </div>
                         </div>
                     </template>
@@ -183,21 +238,76 @@
 
 /* Print Styles */
 @media print {
-    body * {
-        visibility: hidden;
-    }
-    #receiptArea, #receiptArea * {
-        visibility: visible;
-    }
-    #receiptArea {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 80mm; /* Thermal printer width approx */
+    @page {
         margin: 0;
-        padding: 10px;
-        background: white;
-        border: none;
+    }
+
+    body * {
+        visibility: hidden !important;
+    }
+
+    html, body {
+        display: block !important;
+        width: auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        position: static !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    #receiptModal {
+        display: block !important;
+        position: static !important;
+        width: auto !important;
+        height: auto !important;
+        overflow: visible !important;
+        padding: 0 !important;
+        background: transparent !important;
+        backdrop-filter: none !important;
+        transform: none !important;
+        visibility: visible !important;
+    }
+
+    #receiptModal > div {
+        display: block !important;
+        position: static !important;
+        width: auto !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        transform: none !important;
+        margin: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+    }
+
+    #receiptModal > div > :not(#receiptArea) {
+        display: none !important;
+    }
+
+    #receiptArea, #receiptArea * {
+        visibility: visible !important;
+    }
+
+    #receiptArea {
+        display: block !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 80mm !important;
+        box-sizing: border-box !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        margin: 0 !important;
+        padding: 4mm !important;
+        background: white !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
     }
 }
 </style>
@@ -206,6 +316,7 @@
     function riwayatApp() {
         return {
             search: '',
+            dateMode: @js($modeTanggal),
             transaksis: @json($transaksis),
             showReceiptModal: false,
             selectedTrx: null,
@@ -221,6 +332,12 @@
             
             formatRupiah(number) {
                 return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(number);
+            },
+
+            getKembalian(transaksi) {
+                const bayar = Number(transaksi.bayar) || 0;
+                const total = Number(transaksi.total) || 0;
+                return Math.max(0, bayar - total);
             },
             
             formatDate(dateString) {

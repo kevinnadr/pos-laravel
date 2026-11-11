@@ -13,6 +13,9 @@ class AuthController extends Controller
             if (Auth::user()->role === 'kasir') {
                 return redirect()->route('pos');
             }
+            if (Auth::user()->role === 'gudang') {
+                return redirect()->route('produk');
+            }
             return redirect()->route('dashboard');
         }
         return view('auth.login');
@@ -41,6 +44,9 @@ class AuthController extends Controller
 
             if (Auth::user()->role === 'kasir') {
                 return redirect()->route('pos');
+            }
+            if (Auth::user()->role === 'gudang') {
+                return redirect()->route('produk');
             }
             return redirect()->route('dashboard');
         }

@@ -59,7 +59,7 @@
                         <i data-lucide="edit-2" class="w-3.5 h-3.5"></i> Edit
                     </button>
                     
-                    <form :action="`/akun/${akun.id}`" method="POST" class="inline" onsubmit="return confirm('Hapus akun ini?');" x-show="akun.id !== {{ auth()->id() }}">
+                    <form :action="`/akun/${akun.id}`" method="POST" class="inline" @submit.prevent="confirmDelete($event)" x-show="akun.id !== {{ auth()->id() }}">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="text-red-500 hover:text-red-600 px-3 py-1.5 border border-red-100 bg-red-50 rounded-md text-sm font-medium hover:bg-red-100 flex items-center gap-1 transition">
@@ -91,7 +91,7 @@
                 <div class="p-6 space-y-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Nama Lengkap</label>
-                        <input type="text" name="nama" x-model="form.nama" required placeholder="cth. Budi Santoso" class="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                        <input type="text" name="nama" x-model="form.nama" required placeholder="Masukkan nama lengkap" class="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                     </div>
                     
                     <div class="grid grid-cols-2 gap-4">
@@ -99,6 +99,7 @@
                             <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Role</label>
                             <select name="role" x-model="form.role" required class="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                                 <option value="kasir">Kasir</option>
+                                <option value="gudang">Gudang</option>
                                 <option value="admin">Admin</option>
                             </select>
                         </div>
@@ -185,6 +186,35 @@
             
             closeModal() {
                 this.showModal = false;
+            },
+
+            async confirmDelete(event) {
+                const result = await Swal.fire({
+                    title: 'Hapus akun?',
+                    text: 'Akun ini akan dihapus dan tidak dapat digunakan untuk masuk kembali.',
+                    icon: 'warning',
+                    iconColor: '#f59e0b',
+                    showCancelButton: true,
+                    reverseButtons: true,
+                    confirmButtonText: 'Ya, hapus akun',
+                    cancelButtonText: 'Batal',
+                    buttonsStyling: false,
+                    focusCancel: true,
+                    background: '#ffffff',
+                    color: '#0f172a',
+                    customClass: {
+                        popup: '!rounded-2xl !shadow-[0_20px_60px_-15px_rgba(15,23,42,0.3)] !border !border-slate-100 !p-6',
+                        title: '!text-xl !font-bold !text-slate-800',
+                        htmlContainer: '!text-sm !leading-relaxed !text-slate-500',
+                        actions: '!gap-3 !mt-6',
+                        confirmButton: '!rounded-xl !bg-red-600 !px-5 !py-2.5 !text-sm !font-semibold !text-white !shadow-sm hover:!bg-red-700 focus:!outline-none focus:!ring-4 focus:!ring-red-200 !transition',
+                        cancelButton: '!rounded-xl !border !border-slate-200 !bg-white !px-5 !py-2.5 !text-sm !font-semibold !text-slate-600 hover:!bg-slate-50 focus:!outline-none focus:!ring-4 focus:!ring-slate-200 !transition'
+                    }
+                });
+
+                if (result.isConfirmed) {
+                    event.target.submit();
+                }
             }
         }
     }

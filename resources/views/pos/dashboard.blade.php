@@ -90,7 +90,7 @@
             
             <div class="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
                 @forelse($stokMenipisList as $produk)
-                <div class="flex justify-between items-center p-3 bg-slate-50 hover:bg-white hover:shadow-md hover:border-amber-200 transition-all duration-300 border border-slate-100 rounded-xl group">
+                <a href="{{ route('produk', ['edit' => $produk->id]) }}" class="flex justify-between items-center p-3 bg-slate-50 hover:bg-white hover:shadow-md hover:border-amber-200 transition-all duration-300 border border-slate-100 rounded-xl group focus:outline-none focus:ring-2 focus:ring-amber-400">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden shadow-sm group-hover:scale-105 transition-transform">
                             @if($produk->foto)
@@ -109,7 +109,7 @@
                             Sisa {{ $produk->stok }}
                         </span>
                     </div>
-                </div>
+                </a>
                 @empty
                 <div class="flex flex-col items-center justify-center h-full text-slate-400 py-8">
                     <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-3">
@@ -164,6 +164,11 @@
                 </tbody>
             </table>
         </div>
+        @if ($transaksiTerbaru->hasPages())
+            <div class="border-t border-slate-100 px-5 py-4">
+                {{ $transaksiTerbaru->links() }}
+            </div>
+        @endif
     </div>
 </div>
 

@@ -1,9 +1,9 @@
 @extends('pos.layout')
 
 @section('content')
-<div class="flex-1 flex relative h-[calc(100vh-theme(spacing.16))] overflow-hidden" x-data="posApp()">
+<div class="pos-layout flex-1 flex relative h-[calc(100vh-theme(spacing.16))] overflow-hidden" x-data="posApp()">
     <!-- Bagian Produk (Kiri) -->
-    <div class="flex-1 flex flex-col h-full bg-slate-50">
+    <div class="pos-products flex-1 flex flex-col h-full min-w-0 bg-slate-50">
         <!-- Header & Pencarian -->
         <div class="p-4 bg-white shadow-lg shadow-slate-200/50 flex flex-col gap-4 z-10 relative border border-slate-200 rounded-2xl mx-4 mt-4 mb-2">
             <div class="flex gap-3">
@@ -23,7 +23,7 @@
         </div>
 
         <!-- Grid Produk -->
-        <div class="flex-1 overflow-y-auto px-4 pb-4 pt-2 custom-scrollbar">
+        <div class="pos-product-list flex-1 overflow-y-auto px-4 pb-4 pt-2 custom-scrollbar">
             <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5">
                 <template x-for="p in filteredProduks" :key="p.id">
                     <div @click="addToCart(p)" class="bg-white rounded-2xl border border-slate-200 shadow-md shadow-slate-200/50 hover:-translate-y-1 hover:border-blue-500 hover:shadow-xl hover:shadow-blue-200/50 transition-all duration-300 cursor-pointer flex flex-col group overflow-hidden relative">
@@ -69,7 +69,7 @@
     </div>
 
     <!-- Bagian Keranjang (Kanan) -->
-    <div class="w-96 bg-white flex flex-col z-20 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] shrink-0 border border-slate-200 my-4 mr-5 ml-2 rounded-3xl overflow-hidden" style="height: calc(100% - 2rem);">
+    <div class="pos-cart-panel w-96 bg-white flex flex-col z-20 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] shrink-0 border border-slate-200 my-4 mr-5 ml-2 rounded-3xl overflow-hidden" :class="{ 'is-open': showMobileCart }" style="height: calc(100% - 2rem);">
         <!-- Header Keranjang -->
         <div class="px-5 py-4 border-b border-blue-500 bg-blue-600 text-white flex items-center justify-between">
             <h2 class="font-bold flex items-center gap-2">
@@ -124,6 +124,15 @@
             </button>
         </div>
     </div>
+
+    <button type="button" class="pos-mobile-cart-trigger hidden" @click="showMobileCart = true">
+        <span class="flex items-center gap-2">
+            <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+            Keranjang (<span x-text="cartItemCount"></span>)
+        </span>
+        <span x-text="formatRp(subtotal)"></span>
+    </button>
+    <div x-show="showMobileCart" @click="showMobileCart = false" class="pos-mobile-cart-backdrop" style="display: none;"></div>
 
     <!-- Modal Pembayaran -->
     <div x-show="showPaymentModal" class="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" style="display: none;" x-transition>
@@ -265,7 +274,7 @@
     </div>
 
     <!-- Modal Transaksi Berhasil (Struk) -->
-    <div x-show="showSuccessModal" class="fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" style="display: none;" x-transition>
+    <div id="receiptModal" x-show="showSuccessModal" class="fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" style="display: none;" x-transition>
         <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden relative">
             <button @click="resetPOS()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 transition z-10 bg-white/80 rounded-full p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
             
@@ -286,6 +295,9 @@
                     @endif
                     <h3 class="font-black text-slate-800 tracking-widest uppercase text-base">{{ isset($pengaturan) ? $pengaturan->nama_toko : 'RAKET MURAH JOGJA' }}</h3>
                     <p class="text-xs text-slate-500 mt-1">{{ isset($pengaturan) ? $pengaturan->alamat_toko : 'Jl. Olahraga No. 88, Bandung' }}</p>
+                    @if(isset($pengaturan) && $pengaturan->email_toko)
+                    <p class="text-xs text-slate-500">{{ $pengaturan->email_toko }}</p>
+                    @endif
                     <p class="text-xs text-slate-500">{{ isset($pengaturan) ? $pengaturan->no_telp : '081234567890' }}</p>
                     <div class="w-full border-t border-dashed border-slate-300 mt-4"></div>
                 </div>
@@ -297,7 +309,7 @@
                     </div>
                     <div class="flex flex-col gap-1 text-right text-slate-800 font-bold">
                         <span x-text="trxDate"></span>
-                        <span>Administrator</span>
+                        <span x-text="completedKasir"></span>
                     </div>
                 </div>
 
@@ -343,7 +355,7 @@
                             </div>
                             <div class="flex justify-between text-slate-500 mt-1">
                                 <span>Kembali</span>
-                                <span x-text="formatRp(completedBayar - completedTotal)"></span>
+                                <span x-text="formatRp(completedKembalian)"></span>
                             </div>
                         </div>
                     </template>
@@ -367,6 +379,122 @@
 </div>
 
 <style>
+@media screen and (max-width: 767px) {
+    body {
+        display: block !important;
+        width: 100%;
+        min-width: 0;
+        height: auto !important;
+        min-height: 100dvh;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+    }
+
+    body > aside {
+        display: none !important;
+    }
+
+    body > main {
+        display: block !important;
+        width: 100%;
+        height: auto !important;
+        min-height: 100dvh;
+        overflow: visible !important;
+    }
+
+    .pos-layout {
+        display: block !important;
+        width: 100%;
+        min-width: 0;
+        height: auto !important;
+        min-height: 100dvh;
+        overflow: visible !important;
+        padding-bottom: 5.25rem;
+    }
+
+    .pos-products {
+        width: 100%;
+        min-width: 0;
+        height: auto !important;
+        min-height: 100dvh;
+    }
+
+    .pos-products > div:first-child {
+        margin: 0.75rem;
+        padding: 0.75rem;
+    }
+
+    .pos-product-list {
+        flex: none;
+        overflow: visible;
+        padding: 0 0.75rem 1rem;
+    }
+
+    .pos-product-list > div {
+        gap: 0.75rem;
+    }
+
+    .pos-cart-panel {
+        display: none !important;
+        position: fixed !important;
+        z-index: 40 !important;
+        inset: auto 0 0 !important;
+        width: 100% !important;
+        max-width: none !important;
+        height: auto !important;
+        max-height: 82dvh !important;
+        margin: 0 !important;
+        border-radius: 1.25rem 1.25rem 0 0 !important;
+        box-shadow: 0 -12px 35px rgb(15 23 42 / 0.2) !important;
+    }
+
+    .pos-cart-panel.is-open {
+        display: flex !important;
+    }
+
+    .pos-cart-panel > div:nth-child(2) {
+        min-height: 4rem;
+    }
+
+    .pos-mobile-cart-trigger {
+        display: flex !important;
+        position: fixed;
+        z-index: 35;
+        right: 0.75rem;
+        bottom: max(0.75rem, env(safe-area-inset-bottom));
+        left: 0.75rem;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        min-height: 3.25rem;
+        padding: 0.75rem 1rem;
+        border: 0;
+        border-radius: 0.875rem;
+        background: #2563eb;
+        color: white;
+        font-size: 0.875rem;
+        font-weight: 700;
+        box-shadow: 0 8px 20px rgb(37 99 235 / 0.3);
+    }
+
+    .pos-mobile-cart-backdrop {
+        position: fixed;
+        z-index: 30;
+        inset: 0;
+        background: rgb(15 23 42 / 0.5);
+    }
+
+    #receiptModal > div {
+        width: 100% !important;
+        max-width: 24rem !important;
+        max-height: 92dvh !important;
+    }
+
+    #receiptArea {
+        min-width: 0;
+    }
+}
+
 /* Sembunyikan scrollbar tapi tetap bisa scroll */
 .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
@@ -387,37 +515,73 @@
 @media print {
     @page {
         margin: 0;
-        size: 80mm auto;
     }
 
     body * {
-        visibility: hidden;
+        visibility: hidden !important;
     }
 
-    /* Buka constraint overflow & height pada semua parent agar tidak terpotong */
-    body, html, main, [x-data="posApp()"], [x-show="showSuccessModal"], [x-show="showSuccessModal"] > div {
+    html, body {
+        display: block !important;
+        width: auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        position: static !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    #receiptModal {
+        display: block !important;
+        position: static !important;
+        width: auto !important;
+        height: auto !important;
+        overflow: visible !important;
+        padding: 0 !important;
+        background: transparent !important;
+        backdrop-filter: none !important;
+        transform: none !important;
+        visibility: visible !important;
+    }
+
+    #receiptModal > div {
+        display: block !important;
+        width: auto !important;
         height: auto !important;
         max-height: none !important;
         overflow: visible !important;
         position: static !important;
         transform: none !important;
-        padding: 0 !important;
         margin: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+    }
+
+    #receiptModal > div > :not(#receiptArea) {
+        display: none !important;
     }
 
     #receiptArea, #receiptArea * {
-        visibility: visible;
+        visibility: visible !important;
     }
 
     #receiptArea {
-        position: absolute !important;
-        left: 0 !important;
+        display: block !important;
+        position: fixed !important;
         top: 0 !important;
-        width: 80mm !important; 
+        left: 0 !important;
+        width: 80mm !important;
+        box-sizing: border-box !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
         margin: 0 !important;
-        padding: 10px !important;
+        padding: 4mm !important;
         background: white !important;
         border: none !important;
+        border-radius: 0 !important;
         box-shadow: none !important;
     }
 }
@@ -432,6 +596,7 @@
             cart: [],
             
             showPaymentModal: false,
+            showMobileCart: false,
             metode: 'cash',
             
             // State Diskon
@@ -449,8 +614,10 @@
             completedSubtotal: 0,
             completedDiskon: 0,
             completedTotal: 0,
+            completedKasir: '',
             completedMetode: '',
             completedBayar: 0,
+            completedKembalian: 0,
             
             get filteredProduks() {
                 return this.produks.filter(p => {
@@ -569,6 +736,7 @@
             },
             
             openPaymentModal() {
+                this.showMobileCart = false;
                 this.showPaymentModal = true;
                 this.metode = 'cash';
                 this.diskonTipe = 'persen';
@@ -627,6 +795,8 @@
                     if (data.success) {
                         // Persiapkan data struk
                         this.trxId = data.transaksi_id;
+                        this.completedKasir = data.kasir;
+                        this.completedKembalian = Number(data.kembalian);
                         let d = new Date();
                         this.trxDate = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
                         
@@ -651,6 +821,7 @@
 
             resetPOS() {
                 this.cart = [];
+                this.showMobileCart = false;
                 this.showSuccessModal = false;
                 location.reload(); // Reload to refresh stock
             },

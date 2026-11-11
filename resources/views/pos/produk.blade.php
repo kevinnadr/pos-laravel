@@ -7,14 +7,28 @@
             <h1 class="text-2xl font-bold text-slate-800">Manajemen Produk</h1>
             <p class="text-slate-500 text-sm mt-1">{{ count($produks) }} produk terdaftar</p>
         </div>
-        <button @click="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition shadow-sm">
-            <i data-lucide="plus" class="w-4 h-4"></i> Tambah Produk
-        </button>
+        <div class="flex flex-wrap gap-2">
+            @if(Auth::user()->role === 'admin')
+            <button type="button" @click="showCategoryModal = true" class="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition shadow-sm">
+                <i data-lucide="tag" class="w-4 h-4"></i> Tambah Kategori
+            </button>
+            @endif
+            @if(Auth::user()->role !== 'kasir')
+                <button @click="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition shadow-sm">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Tambah Produk
+                </button>
+            @endif
+        </div>
     </div>
 
     @if(session('success'))
     <div class="mb-4 bg-emerald-50 text-emerald-600 p-3 rounded-lg text-sm flex items-center gap-2 border border-emerald-200">
         <i data-lucide="check-circle" class="w-4 h-4"></i> {{ session('success') }}
+    </div>
+    @endif
+    @if(session('error'))
+    <div class="mb-4 bg-red-50 text-red-600 p-3 rounded-lg text-sm flex items-center gap-2 border border-red-200">
+        <i data-lucide="alert-circle" class="w-4 h-4"></i> {{ session('error') }}
     </div>
     @endif
     
@@ -92,13 +106,15 @@
                                     <button @click="openModal(p)" class="hover:text-blue-600 p-2 rounded-full hover:bg-blue-50 transition-colors" title="Edit">
                                         <i data-lucide="edit-2" class="w-4 h-4"></i>
                                     </button>
-                                    <form :action="`/produk/${p.id}`" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus produk ini?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="hover:text-red-600 p-2 rounded-full hover:bg-red-50 transition-colors" title="Hapus">
-                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                        </button>
-                                    </form>
+                                    @if(Auth::user()->role !== 'kasir')
+                                        <form :action="`/produk/${p.id}`" method="POST" class="inline" @submit.prevent="confirmDelete($event)">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="hover:text-red-600 p-2 rounded-full hover:bg-red-50 transition-colors" title="Hapus">
+                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                            </button>
+                                        </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -115,6 +131,77 @@
         </div>
     </div>
 
+    @if(Auth::user()->role === 'admin')
+    <div x-show="showCategoryModal" style="display: none;" class="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
+        <div @click.away="showCategoryModal = false" class="bg-white w-full max-w-lg max-h-[90vh] rounded-2xl shadow-xl overflow-hidden flex flex-col">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                <div>
+                    <h3 class="font-bold text-lg text-slate-800">Tambah Kategori</h3>
+                    <p class="text-sm text-slate-500 mt-1">Tambahkan kategori baru dan lihat daftar kategori yang tersedia.</p>
+                </div>
+                <button type="button" @click="showCategoryModal = false" class="text-slate-400 hover:text-slate-600" aria-label="Tutup">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto space-y-6">
+                <form action="{{ route('kategori.store') }}" method="POST" class="space-y-4">
+                    @csrf
+                    <input type="hidden" name="category_form" value="1">
+                    <div>
+                        <label for="new_category_name" class="block text-xs font-bold text-slate-500 uppercase mb-2">Nama Kategori</label>
+                        <input id="new_category_name" type="text" name="nama" value="{{ old('category_form') ? old('nama') : '' }}" required maxlength="255" placeholder="Masukkan nama kategori" class="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                        @error('nama')
+                            @if(old('category_form'))
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @endif
+                        @enderror
+                    </div>
+                    <div>
+                        <label for="new_category_description" class="block text-xs font-bold text-slate-500 uppercase mb-2">Deskripsi</label>
+                        <textarea id="new_category_description" name="deskripsi" rows="2" maxlength="1000" placeholder="Masukkan deskripsi kategori (opsional)" class="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">{{ old('category_form') ? old('deskripsi') : '' }}</textarea>
+                    </div>
+                    <button type="submit" class="w-full px-4 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm">
+                        Simpan Kategori
+                    </button>
+                </form>
+
+                <div>
+                    <h4 class="text-sm font-bold text-slate-800 mb-3">Kategori yang Tersedia ({{ $kategoris->count() }})</h4>
+                    <div class="border border-slate-200 rounded-xl divide-y divide-slate-100 max-h-56 overflow-y-auto">
+                        @forelse($kategoris as $kategori)
+                            <div class="px-4 py-3 flex items-center justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="text-sm font-semibold text-slate-700">{{ $kategori->nama }}</p>
+                                    <p class="text-xs text-slate-500 mt-1">{{ $kategori->deskripsi ?: 'Tidak ada deskripsi' }}</p>
+                                    @if($kategori->produks_count > 0)
+                                        <p class="text-xs text-amber-600 mt-1">Digunakan oleh {{ $kategori->produks_count }} produk</p>
+                                    @endif
+                                </div>
+                                @if($kategori->produks_count === 0)
+                                    <form action="{{ route('kategori.destroy', $kategori->id) }}" method="POST" @submit.prevent="confirmDeleteCategory($event, @js($kategori->nama))" class="shrink-0">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition" title="Hapus kategori {{ $kategori->nama }}" aria-label="Hapus kategori {{ $kategori->nama }}">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </form>
+                                @else
+                                    <button type="button" disabled class="p-2 text-slate-300 rounded-lg shrink-0 cursor-not-allowed" title="Kategori masih digunakan oleh produk" aria-label="Kategori masih digunakan oleh produk">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                @endif
+                            </div>
+                        @empty
+                            <p class="px-4 py-6 text-center text-sm text-slate-500">Belum ada kategori.</p>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Modal Form Produk -->
     <div x-show="showModal" style="display: none;" class="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
         <div @click.away="closeModal()" class="bg-white w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden transform transition-all">
@@ -129,6 +216,25 @@
                     @method('PUT')
                 </template>
                 
+                @if(Auth::user()->role === 'kasir')
+                    <div class="p-6 space-y-5">
+                        <div class="rounded-xl bg-slate-50 border border-slate-200 p-4">
+                            <p class="text-sm font-semibold text-slate-700" x-text="form.nama"></p>
+                            <p class="text-sm text-slate-500 mt-1">
+                                Stok saat ini: <span class="font-bold text-slate-700" x-text="form.stok"></span>
+                            </p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Jumlah Stok yang Ditambahkan</label>
+                            <input type="number" name="stok_tambah" x-model.number="stockToAdd" required min="1" step="1" inputmode="numeric" placeholder="Masukkan jumlah stok" class="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                            <p class="text-xs text-slate-500 mt-2">Masukkan jumlah yang ingin ditambahkan, bukan stok akhir. Stok tidak dapat dikurangi.</p>
+                            <p class="text-sm text-slate-600 mt-3" x-show="Number(stockToAdd) > 0">
+                                Stok setelah ditambahkan:
+                                <span class="font-bold text-emerald-600" x-text="Number(form.stok) + Number(stockToAdd || 0)"></span>
+                            </p>
+                        </div>
+                    </div>
+                @else
                 <div class="p-6 grid grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto">
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Kode Produk</label>
@@ -136,7 +242,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Nama Produk</label>
-                        <input type="text" name="nama" x-model="form.nama" required placeholder="cth. Yonex Arcos 98" class="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                        <input type="text" name="nama" x-model="form.nama" required placeholder="Masukkan nama produk" class="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                     </div>
                     <div class="relative">
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Kategori</label>
@@ -259,10 +365,11 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
                 <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
                     <button type="button" @click="closeModal()" class="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50">Batal</button>
-                    <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm shadow-blue-600/20" x-text="isEdit ? 'Simpan Produk' : 'Simpan Produk'"></button>
+                    <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm shadow-blue-600/20" x-text="isCashier ? 'Tambah Stok' : 'Simpan Produk'"></button>
                 </div>
             </form>
         </div>
@@ -276,7 +383,10 @@
             kategoris: @json($kategoris),
             search: '',
             selectedCategory: '{{ request()->query('kategori') ?? '' }}',
+            isCashier: @json(Auth::user()->role === 'kasir'),
+            stockToAdd: '',
             showModal: false,
+            showCategoryModal: @json(old('category_form') === '1'),
             katSearch: '',
             katOpen: false,
             katHighlight: 0,
@@ -288,6 +398,14 @@
                 this.$watch('selectedCategory', () => {
                     this.$nextTick(() => lucide.createIcons());
                 });
+
+                const editId = @js($editProdukId);
+                if (editId !== null) {
+                    const produk = this.produks.find(item => Number(item.id) === Number(editId));
+                    if (produk) {
+                        this.$nextTick(() => this.openModal(produk));
+                    }
+                }
             },
 
             get filteredKategoris() {
@@ -356,6 +474,7 @@
                 this.katHighlight = 0;
                 if (produk) {
                     this.isEdit = true;
+                    this.stockToAdd = '';
                     this.form.id = produk.id;
                     this.form.kode = produk.kode;
                     this.form.nama = produk.nama;
@@ -370,6 +489,7 @@
                     this.katSearch = kat ? kat.nama : '';
                 } else {
                     this.isEdit = false;
+                    this.stockToAdd = '';
                     this.form.id = null;
                     this.form.kode = `PRD${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
                     this.form.nama = '';
@@ -387,6 +507,64 @@
             
             closeModal() {
                 this.showModal = false;
+            },
+
+            async confirmDelete(event) {
+                const result = await Swal.fire({
+                    title: 'Hapus produk?',
+                    text: 'Produk ini akan dihapus dari daftar produk.',
+                    icon: 'warning',
+                    iconColor: '#f59e0b',
+                    showCancelButton: true,
+                    reverseButtons: true,
+                    confirmButtonText: 'Ya, hapus produk',
+                    cancelButtonText: 'Batal',
+                    buttonsStyling: false,
+                    focusCancel: true,
+                    background: '#ffffff',
+                    color: '#0f172a',
+                    customClass: {
+                        popup: '!rounded-2xl !shadow-[0_20px_60px_-15px_rgba(15,23,42,0.3)] !border !border-slate-100 !p-6',
+                        title: '!text-xl !font-bold !text-slate-800',
+                        htmlContainer: '!text-sm !leading-relaxed !text-slate-500',
+                        actions: '!gap-3 !mt-6',
+                        confirmButton: '!rounded-xl !bg-red-600 !px-5 !py-2.5 !text-sm !font-semibold !text-white !shadow-sm hover:!bg-red-700 focus:!outline-none focus:!ring-4 focus:!ring-red-200 !transition',
+                        cancelButton: '!rounded-xl !border !border-slate-200 !bg-white !px-5 !py-2.5 !text-sm !font-semibold !text-slate-600 hover:!bg-slate-50 focus:!outline-none focus:!ring-4 focus:!ring-slate-200 !transition'
+                    }
+                });
+
+                if (result.isConfirmed) {
+                    event.target.submit();
+                }
+            },
+
+            async confirmDeleteCategory(event, categoryName) {
+                const result = await Swal.fire({
+                    title: 'Hapus kategori?',
+                    text: `Kategori "${categoryName}" akan dihapus permanen.`,
+                    icon: 'warning',
+                    iconColor: '#f59e0b',
+                    showCancelButton: true,
+                    reverseButtons: true,
+                    confirmButtonText: 'Ya, hapus kategori',
+                    cancelButtonText: 'Batal',
+                    buttonsStyling: false,
+                    focusCancel: true,
+                    background: '#ffffff',
+                    color: '#0f172a',
+                    customClass: {
+                        popup: '!rounded-2xl !shadow-[0_20px_60px_-15px_rgba(15,23,42,0.3)] !border !border-slate-100 !p-6',
+                        title: '!text-xl !font-bold !text-slate-800',
+                        htmlContainer: '!text-sm !leading-relaxed !text-slate-500',
+                        actions: '!gap-3 !mt-6',
+                        confirmButton: '!rounded-xl !bg-red-600 !px-5 !py-2.5 !text-sm !font-semibold !text-white !shadow-sm hover:!bg-red-700 focus:!outline-none focus:!ring-4 focus:!ring-red-200 !transition',
+                        cancelButton: '!rounded-xl !border !border-slate-200 !bg-white !px-5 !py-2.5 !text-sm !font-semibold !text-slate-600 hover:!bg-slate-50 focus:!outline-none focus:!ring-4 focus:!ring-slate-200 !transition'
+                    }
+                });
+
+                if (result.isConfirmed) {
+                    event.target.submit();
+                }
             },
             
             previewFile(event) {

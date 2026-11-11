@@ -24,7 +24,10 @@ class PosController extends Controller
         $stokMenipisList = \App\Models\Produk::whereColumn('stok', '<=', 'min_stok')->orderBy('stok', 'asc')->take(4)->get();
         $stokMenipisCount = \App\Models\Produk::whereColumn('stok', '<=', 'min_stok')->count();
         
-        $transaksiTerbaru = \App\Models\Transaksi::latest()->take(5)->get();
+        $transaksiTerbaru = \App\Models\Transaksi::whereDate(
+            'created_at',
+            \Carbon\Carbon::today()
+        )->latest()->paginate(15);
 
         // Data Penjualan 7 Hari Terakhir
         $chartData = [];
@@ -43,13 +46,18 @@ class PosController extends Controller
 
     public function kategori()
     {
-        $kategoris = \App\Models\Kategori::withCount('produks')->get();
+        $kategoris = \App\Models\Kategori::withCount('produks')
+            ->orderBy('nama')
+            ->get();
         return view('pos.kategori', compact('kategoris'));
     }
 
     public function storeKategori(\Illuminate\Http\Request $request)
     {
-        $request->validate(['nama' => 'required']);
+        $request->validate([
+            'nama' => ['required', 'string', 'max:255'],
+            'deskripsi' => ['nullable', 'string', 'max:1000'],
+        ]);
         \App\Models\Kategori::create($request->only(['nama', 'deskripsi']));
         return redirect()->back()->with('success', 'Kategori berhasil ditambahkan.');
     }
@@ -65,6 +73,11 @@ class PosController extends Controller
     public function destroyKategori($id)
     {
         $kategori = \App\Models\Kategori::findOrFail($id);
+
+        if ($kategori->produks()->exists()) {
+            return redirect()->back()->with('error', 'Kategori tidak dapat dihapus karena masih digunakan oleh produk.');
+        }
+
         $kategori->delete();
         return redirect()->back()->with('success', 'Kategori berhasil dihapus.');
     }
@@ -72,15 +85,18 @@ class PosController extends Controller
     public function produk(Request $request)
     {
         $kategori_id = $request->query('kategori');
+        $editProdukId = $request->validate([
+            'edit' => ['nullable', 'integer', 'exists:produks,id'],
+        ])['edit'] ?? null;
         $query = \App\Models\Produk::with('kategori');
         
         if ($kategori_id) {
             $query->where('kategori_id', $kategori_id);
         }
         
-        $produks = $query->get();
-        $kategoris = \App\Models\Kategori::all();
-        return view('pos.produk', compact('produks', 'kategoris', 'kategori_id'));
+        $produks = $query->orderBy('nama')->get();
+        $kategoris = \App\Models\Kategori::withCount('produks')->orderBy('nama')->get();
+        return view('pos.produk', compact('produks', 'kategoris', 'kategori_id', 'editProdukId'));
     }
 
     public function storeProduk(Request $request)
@@ -109,31 +125,47 @@ class PosController extends Controller
 
     public function updateProduk(Request $request, $id)
     {
-        $produk = \App\Models\Produk::findOrFail($id);
-        
-        $request->validate([
-            'kode' => 'required|unique:produks,kode,'.$id,
-            'nama' => 'required',
-            'kategori_id' => 'required|exists:kategoris,id',
-            'harga' => 'required|numeric',
-            'harga_modal' => 'required|numeric',
-            'stok' => 'required|numeric',
-            'min_stok' => 'required|numeric',
-            'foto' => 'nullable|image|max:2048'
-        ]);
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($request, $id) {
+            $produk = \App\Models\Produk::whereKey($id)->lockForUpdate()->firstOrFail();
 
-        $data = $request->except('foto');
-        
-        if ($request->hasFile('foto')) {
-            if ($produk->foto) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($produk->foto);
+            if ($request->user()->role === 'kasir') {
+                $data = $request->validate([
+                    'stok_tambah' => ['required', 'integer', 'min:1'],
+                ], [
+                    'stok_tambah.required' => 'Masukkan jumlah stok yang ingin ditambahkan.',
+                    'stok_tambah.integer' => 'Jumlah stok harus berupa bilangan bulat.',
+                    'stok_tambah.min' => 'Jumlah stok yang ditambahkan minimal 1.',
+                ]);
+
+                $produk->increment('stok', $data['stok_tambah']);
+
+                return redirect()->back()->with('success', 'Stok produk berhasil ditambahkan.');
             }
-            $path = $request->file('foto')->store('produks', 'public');
-            $data['foto'] = $path;
-        }
 
-        $produk->update($data);
-        return redirect()->back()->with('success', 'Produk berhasil diperbarui.');
+            $request->validate([
+                'kode' => 'required|unique:produks,kode,'.$id,
+                'nama' => 'required',
+                'kategori_id' => 'required|exists:kategoris,id',
+                'harga' => 'required|numeric',
+                'harga_modal' => 'required|numeric',
+                'stok' => 'required|numeric',
+                'min_stok' => 'required|numeric',
+                'foto' => 'nullable|image|max:2048'
+            ]);
+
+            $data = $request->except('foto');
+            
+            if ($request->hasFile('foto')) {
+                if ($produk->foto) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($produk->foto);
+                }
+                $path = $request->file('foto')->store('produks', 'public');
+                $data['foto'] = $path;
+            }
+
+            $produk->update($data);
+            return redirect()->back()->with('success', 'Produk berhasil diperbarui.');
+        });
     }
 
     public function destroyProduk($id)
@@ -148,15 +180,55 @@ class PosController extends Controller
 
     public function pos()
     {
-        $kategoris = Kategori::all();
-        $produks = Produk::where('stok', '>', 0)->get();
+        $kategoris = Kategori::orderBy('nama')->get();
+        $produks = Produk::where('stok', '>', 0)
+            ->orderBy('nama')
+            ->get();
         return view('pos.kasir', compact('kategoris', 'produks'));
     }
 
-    public function riwayat()
+    public function riwayat(Request $request)
     {
-        $transaksis = Transaksi::with('items')->orderBy('created_at', 'desc')->get();
-        return view('pos.riwayat', compact('transaksis'));
+        $modeTanggal = $request->query('mode_tanggal', 'rentang');
+        $filters = $request->validate([
+            'mode_tanggal' => ['sometimes', 'in:tanggal,rentang'],
+            'tanggal' => ['nullable', 'required_if:mode_tanggal,tanggal', 'date_format:Y-m-d'],
+            'tanggal_mulai' => ['nullable', 'date_format:Y-m-d'],
+            'tanggal_selesai' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:tanggal_mulai'],
+        ], [
+            'tanggal.required_if' => 'Pilih tanggal yang ingin dicari.',
+            'tanggal.date_format' => 'Format tanggal tidak valid.',
+            'tanggal_mulai.date_format' => 'Format tanggal mulai tidak valid.',
+            'tanggal_selesai.date_format' => 'Format tanggal selesai tidak valid.',
+            'tanggal_selesai.after_or_equal' => 'Tanggal selesai harus sama atau setelah tanggal mulai.',
+        ]);
+
+        $query = Transaksi::with('items');
+
+        if ($modeTanggal === 'tanggal' && !empty($filters['tanggal'])) {
+            $query->whereDate('created_at', $filters['tanggal']);
+        } elseif ($modeTanggal === 'rentang') {
+            if (!empty($filters['tanggal_mulai'])) {
+                $query->whereDate('created_at', '>=', $filters['tanggal_mulai']);
+            }
+
+            if (!empty($filters['tanggal_selesai'])) {
+                $query->whereDate('created_at', '<=', $filters['tanggal_selesai']);
+            }
+        }
+
+        $transaksis = $query->orderBy('created_at', 'desc')->get();
+        $tanggal = $filters['tanggal'] ?? '';
+        $tanggalMulai = $filters['tanggal_mulai'] ?? '';
+        $tanggalSelesai = $filters['tanggal_selesai'] ?? '';
+
+        return view('pos.riwayat', compact(
+            'transaksis',
+            'modeTanggal',
+            'tanggal',
+            'tanggalMulai',
+            'tanggalSelesai'
+        ));
     }
 
     public function storeTransaksi(Request $request)
@@ -176,7 +248,8 @@ class PosController extends Controller
 
         $transaksi = Transaksi::create([
             'id' => $transaksiId,
-            'kasir' => 'Administrator', // Mock user for now
+            'user_id' => $request->user()->id,
+            'kasir' => $request->user()->name,
             'subtotal' => $data['subtotal'],
             'diskon' => $data['diskon'],
             'total' => $data['total'],
@@ -201,6 +274,11 @@ class PosController extends Controller
             }
         }
 
-        return response()->json(['success' => true, 'transaksi_id' => $transaksi->id]);
+        return response()->json([
+            'success' => true,
+            'transaksi_id' => $transaksi->id,
+            'kasir' => $transaksi->kasir,
+            'kembalian' => max(0, (int) $transaksi->bayar - (int) $transaksi->total),
+        ]);
     }
 }

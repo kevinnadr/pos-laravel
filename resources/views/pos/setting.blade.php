@@ -4,7 +4,7 @@
 <div class="p-6">
     <div class="flex justify-between items-center mb-6">
         <div>
-            <h2 class="text-2xl font-bold text-slate-800">Pengaturan Toko & POS</h2>
+            <h2 class="text-2xl font-bold text-slate-800">Pengaturan</h2>
             <p class="text-slate-500 text-sm mt-1">Ubah identitas toko, info struk, dan pengaturan metode pembayaran</p>
         </div>
     </div>
@@ -44,8 +44,26 @@
                     </div>
 
                     <div>
+                        <label for="email_toko" class="block text-sm font-semibold text-slate-700 mb-1">Email Toko (Opsional)</label>
+                        <input id="email_toko" type="email" name="email_toko" value="{{ old('email_toko', $setting->email_toko) }}" autocomplete="email" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm">
+                        <p class="mt-1 text-xs text-slate-500">Ditampilkan pada struk. Tautan reset password tetap dikirim ke email akun pengguna.</p>
+                        @error('email_toko')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-1">Deskripsi Bawah Struk (Footer)</label>
                         <textarea name="footer_struk" rows="2" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm" required>{{ old('footer_struk', $setting->footer_struk) }}</textarea>
+                    </div>
+
+                    <div>
+                        <label for="footer_login" class="block text-sm font-semibold text-slate-700 mb-1">Footer Halaman Login</label>
+                        <input id="footer_login" type="text" name="footer_login" value="{{ old('footer_login', $setting->footer_login) }}" maxlength="255" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm">
+                        <p class="mt-1 text-xs text-slate-500">Kosongkan jika tulisan tidak ingin ditampilkan.</p>
+                        @error('footer_login')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
 
                     <div>
@@ -122,7 +140,7 @@
             </div>
         </div>
 
-        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex justify-end">
+        <div class="flex justify-end">
             <button type="submit" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-600/30 transition flex items-center gap-2 text-sm">
                 <i data-lucide="save" class="w-4 h-4"></i> Simpan Pengaturan
             </button>
